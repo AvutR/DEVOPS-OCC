@@ -1,10 +1,14 @@
 pipeline {
     agent any
 
+    options {
+        skipDefaultCheckout(true)
+    }
+
     stages {
         stage('Clone') {
             steps {
-                echo 'Cloning repository...'
+                echo 'Repo already cloned by Jenkins'
             }
         }
 
