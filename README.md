@@ -38,3 +38,6 @@ A simple, archaic Vegas-style text-based slot machine game written in Python.
 ## License
 
 MIT
+
+
+docs: update README with CI/CD and Docker instructions
