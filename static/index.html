@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DevOps Slot Machine</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #0f0f0f, #1e1e1e);
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+        .card {
+            background: #1a1a1a;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            width: 400px;
+            box-shadow: 0 0 25px rgba(0, 255, 150, 0.3);
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .reels {
+            font-size: 40px;
+            margin: 20px 0;
+        }
+
+        .balance {
+            margin-top: 15px;
+            font-size: 18px;
+            opacity: 0.8;
+        }
+
+        button {
+            background: #00ff99;
+            border: none;
+            padding: 12px 25px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        button:hover {
+            background: #00cc77;
+            transform: scale(1.05);
+        }
+
+        .error {
+            color: #ff4d4d;
+            margin-top: 15px;
+        }
+
+        .reset-btn {
+            margin-top: 15px;
+            background: #444;
+        }
+
+        .reset-btn:hover {
+            background: #666;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🎰 DevOps Slot Machine</h1>
+
+    <div class="reels" id="reels">🎲 🎲 🎲</div>
+
+    <button onclick="spin()">🎯 SPIN</button>
+
+    <div class="balance" id="balance">Balance: $100</div>
+
+    <div id="message"></div>
+</div>
+
+<script>
+let currentBalance = 100;
+
+async function spin() {
+    const response = await fetch('/spin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bet_amount: 5 })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        document.getElementById('message').innerHTML =
+            `<div class="error">⚠ ${data.detail}</div>
+             <button class="reset-btn" onclick="resetGame()">🔄 Reset Game</button>`;
+        return;
+    }
+
+    document.getElementById('reels').innerHTML =
+        `${data.reel1} | ${data.reel2} | ${data.reel3}`;
+
+    document.getElementById('balance').innerHTML =
+        `💰 Balance: $${data.new_balance}`;
+
+    document.getElementById('message').innerHTML =
+        data.winnings > 0
+            ? `🎉 You won $${data.winnings}!`
+            : `😅 No win this time.`;
+
+    currentBalance = data.new_balance;
+}
+
+async function resetGame() {
+    await fetch('/reset', { method: 'POST' });
+    document.getElementById('reels').innerHTML = "🎲 🎲 🎲";
+    document.getElementById('balance').innerHTML = "💰 Balance: $100";
+    document.getElementById('message').innerHTML = "";
+}
+</script>
+
+</body>
+</html>
