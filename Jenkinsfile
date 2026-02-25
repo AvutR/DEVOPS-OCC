@@ -24,6 +24,7 @@ pipeline {
             steps {
                 echo 'Building Docker image...'
                 sh 'docker build -t keerti144/devops-game:latest .'
+                sh 'docker tag keerti144/devops-game:latest keerti144/devops-game:build-${BUILD_NUMBER}'
             }
         }
 
@@ -32,6 +33,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                     sh 'docker push keerti144/devops-game:latest'
+                    sh 'docker push keerti144/devops-game:build-${BUILD_NUMBER}'
                 }
             }
         }
