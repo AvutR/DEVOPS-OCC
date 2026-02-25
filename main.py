@@ -7,8 +7,11 @@ Provides REST endpoints for slot machine operations
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from slot_engine import SlotEngine
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 app = FastAPI(title="Vegas Slot Machine API", version="1.0.0")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Global engine instance
 engine = SlotEngine(starting_balance=100)
@@ -38,16 +41,8 @@ class GameStateResponse(BaseModel):
 
 
 @app.get("/")
-def read_root():
-    """Welcome endpoint"""
-    return {
-        "message": "Welcome to Vegas Slot Machine API",
-        "endpoints": {
-            "GET /state": "Get current game state",
-            "POST /spin": "Spin the reels",
-            "POST /reset": "Reset the game",
-        }
-    }
+def serve_frontend():
+    return FileResponse("static/index.html")
 
 
 @app.get("/state")
@@ -63,34 +58,28 @@ def get_state() -> GameStateResponse:
 
 
 @app.post("/spin")
-def spin(request: SpinRequest = SpinRequest()) -> SpinResponse:
-    """Spin the reels and calculate winnings"""
+def spin(request: SpinRequest):
     bet_amount = request.bet_amount
-    
-    # Check if player has enough balance
+
     if not engine.place_bet(bet_amount):
         raise HTTPException(status_code=400, detail="Insufficient balance")
-    
-    # Spin the reels
+
     reel1, reel2, reel3 = engine.spin()
-    
-    # Check for win
     winnings = engine.check_win(reel1, reel2, reel3)
-    
-    # Add winnings to balance
+
     if winnings > 0:
         engine.add_winnings(winnings)
-    
-    return SpinResponse(
-        reel1=reel1,
-        reel2=reel2,
-        reel3=reel3,
-        bet_amount=bet_amount,
-        winnings=winnings,
-        new_balance=engine.balance,
-        total_won=engine.last_winnings,
-        is_winner=winnings > 0,
-    )
+
+    return {
+        "reel1": reel1,
+        "reel2": reel2,
+        "reel3": reel3,
+        "bet_amount": bet_amount,
+        "winnings": winnings,
+        "new_balance": engine.balance,
+        "total_won": engine.last_winnings,
+        "is_winner": winnings > 0,
+    }
 
 
 @app.post("/reset")
