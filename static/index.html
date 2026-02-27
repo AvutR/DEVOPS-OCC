@@ -19,23 +19,13 @@
             padding: 40px;
             border-radius: 15px;
             text-align: center;
-            width: 400px;
+            width: 520px;
             box-shadow: 0 0 25px rgba(0, 255, 150, 0.3);
         }
 
-        h1 {
-            margin-bottom: 20px;
-        }
-
-        .reels {
-            font-size: 40px;
+        #reels {
+            font-size: 42px;
             margin: 20px 0;
-        }
-
-        .balance {
-            margin-top: 15px;
-            font-size: 18px;
-            opacity: 0.8;
         }
 
         button {
@@ -45,27 +35,85 @@
             font-size: 18px;
             border-radius: 8px;
             cursor: pointer;
-            transition: 0.2s ease;
+            margin: 10px;
         }
 
         button:hover {
             background: #00cc77;
-            transform: scale(1.05);
-        }
-
-        .error {
-            color: #ff4d4d;
-            margin-top: 15px;
         }
 
         .reset-btn {
-            margin-top: 15px;
             background: #444;
         }
 
         .reset-btn:hover {
             background: #666;
         }
+
+        #balance {
+            margin-top: 15px;
+            font-size: 18px;
+        }
+
+        /* ===== NEW STATS UI ===== */
+
+        .stats-container {
+            margin-top: 25px;
+            background: #111;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: #1f1f1f;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00ff99;
+        }
+
+        .history {
+            text-align: left;
+            max-height: 120px;
+            overflow-y: auto;
+            background: #1f1f1f;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .history-item {
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        #reels {
+    font-size: 65px;
+    letter-spacing: 15px;
+    margin: 30px 0;
+}
+
+.spinning {
+    animation: spinMotion 0.15s linear infinite;
+}
+
+@keyframes spinMotion {
+    0%   { transform: translateY(0px); }
+    25%  { transform: translateY(-10px); }
+    50%  { transform: translateY(10px); }
+    75%  { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
     </style>
 </head>
 <body>
@@ -73,19 +121,66 @@
 <div class="card">
     <h1>🎰 DevOps Slot Machine</h1>
 
-    <div class="reels" id="reels">🎲 🎲 🎲</div>
+    <div id="reels">🎲 🎲 🎲</div>
 
     <button onclick="spin()">🎯 SPIN</button>
+    <button class="reset-btn" onclick="resetGame()">🔄 RESET</button>
 
-    <div class="balance" id="balance">Balance: $100</div>
-
+    <div id="balance">💰 Balance: $100</div>
     <div id="message"></div>
+
+    <div class="stats-container">
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <h3 style="margin-bottom:8px;">🕒 Last 5 Spins</h3>
+        <div class="history" id="history"></div>
+    </div>
 </div>
 
 <script>
-let currentBalance = 100;
+
+const symbolMap = {
+    "@": "🍒",
+    "#": "💎",
+    "$": "💰",
+    "*": "⭐",
+    "7": "7️⃣",
+    "BAR": "🟥",
+    "CHERRY": "🍒",
+    "LEMON": "🍋"
+};
+
+function animateReels() {
+    const reels = document.getElementById("reels");
+    reels.classList.add("spinning");
+
+    let symbols = Object.values(symbolMap);
+
+    let interval = setInterval(() => {
+        reels.innerHTML =
+            `${symbols[Math.floor(Math.random()*symbols.length)]}
+             ${symbols[Math.floor(Math.random()*symbols.length)]}
+             ${symbols[Math.floor(Math.random()*symbols.length)]}`;
+    }, 100);
+
+    return interval;
+}
 
 async function spin() {
+
+    const reels = document.getElementById("reels");
+
+    reels.classList.add("spinning");
+
+    let symbols = Object.values(symbolMap);
+
+    const interval = setInterval(() => {
+        reels.innerHTML =
+            `${symbols[Math.floor(Math.random()*symbols.length)]}
+             ${symbols[Math.floor(Math.random()*symbols.length)]}
+             ${symbols[Math.floor(Math.random()*symbols.length)]}`;
+    }, 100);
+
     const response = await fetch('/spin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,33 +189,70 @@ async function spin() {
 
     const data = await response.json();
 
+    // Force minimum spin duration
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    clearInterval(interval);
+    reels.classList.remove("spinning");
+
     if (!response.ok) {
         document.getElementById('message').innerHTML =
-            `<div class="error">⚠ ${data.detail}</div>
-             <button class="reset-btn" onclick="resetGame()">🔄 Reset Game</button>`;
+            `⚠ ${data.detail}`;
         return;
     }
 
-    document.getElementById('reels').innerHTML =
-        `${data.reel1} | ${data.reel2} | ${data.reel3}`;
+    reels.innerHTML =
+        `${symbolMap[data.reel1]} 
+         ${symbolMap[data.reel2]} 
+         ${symbolMap[data.reel3]}`;
 
     document.getElementById('balance').innerHTML =
         `💰 Balance: $${data.new_balance}`;
 
     document.getElementById('message').innerHTML =
         data.winnings > 0
-            ? `🎉 You won $${data.winnings}!`
-            : `😅 No win this time.`;
+            ? `🎉 JACKPOT! You won $${data.winnings}!`
+            : `😅 No win.`;
 
-    currentBalance = data.new_balance;
+    loadStats();
+}
+
+
+async function loadStats() {
+    const response = await fetch('/stats');
+    const data = await response.json();
+
+    document.getElementById('statsGrid').innerHTML = `
+        <div class="stat-box">📊 Spins<div class="stat-value">${data.total_spins}</div></div>
+        <div class="stat-box">🏆 Wins<div class="stat-value">${data.total_wins}</div></div>
+        <div class="stat-box">💎 Total Won<div class="stat-value">$${data.total_amount_won}</div></div>
+        <div class="stat-box">📈 Win Rate<div class="stat-value">${data.win_rate}%</div></div>
+        <div class="stat-box">🔥 Highest Win<div class="stat-value">$${data.highest_win}</div></div>
+        <div class="stat-box">🚀 Win Streak<div class="stat-value">${data.max_win_streak}</div></div>
+    `;
+
+    let historyHTML = data.last_5_spins.map(spin =>
+        `<div class="history-item">
+            🎲 ${spin.reels.map(r => symbolMap[r]).join(" | ")}
+            → 💰 $${spin.winnings}
+        </div>`
+    ).join("");
+
+    document.getElementById('history').innerHTML = historyHTML;
 }
 
 async function resetGame() {
     await fetch('/reset', { method: 'POST' });
+
     document.getElementById('reels').innerHTML = "🎲 🎲 🎲";
     document.getElementById('balance').innerHTML = "💰 Balance: $100";
     document.getElementById('message').innerHTML = "";
+
+    loadStats();
 }
+
+loadStats();
+
 </script>
 
 </body>
