@@ -50,9 +50,23 @@ pipeline {
                     sh """
                     ssh -o StrictHostKeyChecking=no ec2-user@$EC2_INSTANCE_IP '
                         docker pull $IMAGE_NAME:latest
+
+                        # Ensure network exists
+                        docker network create slot-net 2>/dev/null || true
+
+                        # Ensure Mongo is running
+                        docker run -d --name mongo-db --network slot-net mongo:6 2>/dev/null || true
+
+                        # Restart app container
                         docker stop slot-machine 2>/dev/null || true
                         docker rm slot-machine 2>/dev/null || true
-                        docker run -d -p 8000:8000 --name slot-machine $IMAGE_NAME:latest
+
+                        docker run -d \
+                            --name slot-machine \
+                            --network slot-net \
+                            -p 8000:8000 \
+                            -e MONGO_URI="mongodb://mongo-db:27017" \
+                            $IMAGE_NAME:latest
                     '
                     """
                 }
