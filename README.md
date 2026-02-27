@@ -1,43 +1,126 @@
-# OCC-Devops Slot Machine
+OCC DevOps Slot Machine
 
-A simple, archaic Vegas-style text-based slot machine game written in Python.
+A simple Vegas-style slot machine application built using FastAPI and deployed using Docker, Jenkins, and AWS EC2.
 
-## Features
+This project demonstrates containerization, CI/CD automation, Docker image versioning, and cloud deployment.
 
-- Classic slot machine experience
-- ASCII art display
-- Simple symbol matching gameplay
-- Retro/vintage UI design
-- Starting balance of $100
+Project Overview
 
-## Symbols & Payouts
+The application consists of:
 
-- **7, 7, 7** = $1000 jackpot!
-- **\*, \*, \*** = $500
-- **#, #, #** = $250
-- **$, $, $** = $200
-- **@, @, @** = $150
+A FastAPI backend
 
-## How to Play
+A static frontend (HTML)
 
-1. Run the game:
-   ```bash
-   python slot_machine.py
-   ```
+Docker containerization
 
-2. Press ENTER to spin (each spin costs $5)
+Jenkins pipeline for automated builds
 
-3. Match symbols to win money
+DockerHub image registry
 
-4. Type 'quit' to exit
+AWS EC2 deployment
 
-## Requirements
+Every push to the master branch triggers:
 
-- Python 3.x
+Docker image build
 
-## License
+Version tagging using Jenkins build number
 
-MIT
+Push to DockerHub
 
+Deployment to EC2
 
-docs: update README with CI/CD and Docker instructions
+Tech Stack
+
+Python 3.11
+
+FastAPI
+
+Uvicorn
+
+Docker
+
+Jenkins
+
+AWS EC2
+
+Project Structure
+DEVOPS-OCC/
+│
+├── static/                # Frontend (index.html)
+├── main.py                # FastAPI application
+├── slot_engine.py         # Game logic
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+└── Jenkinsfile
+API Endpoints
+
+GET / – Serves frontend
+
+GET /state – Returns game state
+
+POST /spin – Spins the slot machine
+
+POST /reset – Resets the game
+
+Swagger documentation is available at:
+
+http://<server-ip>:8000/docs
+Running Locally (Docker)
+
+Build and run:
+
+docker compose up --build -d
+
+Access the app at:
+
+http://localhost:8000
+Docker Image
+
+Images are pushed to DockerHub with versioning:
+
+keerti144/devops-game:latest
+
+keerti144/devops-game:<build-number>
+
+Example:
+
+docker pull keerti144/devops-game:latest
+docker run -d -p 8000:8000 keerti144/devops-game:latest
+Deployment
+
+The application is deployed on an AWS EC2 instance.
+
+During deployment:
+
+The latest Docker image is pulled from DockerHub
+
+Existing container is stopped
+
+New container is started on port 8000
+
+Access:
+
+http://<ec2-public-ip>:8000
+Game Rules
+
+Starting balance: $100
+
+Each spin costs $5
+
+Payouts:
+
+7 7 7 → $1000
+
+→ $500
+
+# # → $250
+
+$ $ $ → $200
+
+@ @ @ → $150
+
+License
+
+MIT License

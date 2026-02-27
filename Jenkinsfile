@@ -40,8 +40,9 @@ pipeline {
 
         stage('Deploy to EC2') {
             when {
-                branch 'master'
-            }
+                expression {
+                    return env.GIT_BRANCH?.endsWith('/master')
+                }
             steps {
                 sshagent(['ec2-ssh-key']) {
                     sh """
