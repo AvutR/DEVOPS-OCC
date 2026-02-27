@@ -1,36 +1,39 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = "keerti144/devops-game"
+    }
+
     stages {
-        stage('Clone') {
+
+        stage('Clone Repository') {
             steps {
-                cleanWs()
                 checkout scm
             }
         }
 
-        stage('Build') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Building application...'
-                sh 'pip install -r requirements.txt || true'
-                sh 'npm install || true'
+                sh '''
+                docker build --no-cache -t $IMAGE_NAME:${BUILD_NUMBER} .
+                docker tag $IMAGE_NAME:${BUILD_NUMBER} $IMAGE_NAME:latest
+                '''
             }
         }
 
-        stage('Docker Build') {
+        stage('Push Image') {
             steps {
-                echo 'Building Docker image...'
-                sh 'docker build --no-cache -t keerti144/devops-game:latest .'
-                sh 'docker tag keerti144/devops-game:latest keerti144/devops-game:build-${BUILD_NUMBER}'
-            }
-        }
-
-        stage('Docker Push') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh 'docker push keerti144/devops-game:latest'
-                    sh 'docker push keerti144/devops-game:build-${BUILD_NUMBER}'
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    docker push $IMAGE_NAME:${BUILD_NUMBER}
+                    docker push $IMAGE_NAME:latest
+                    '''
                 }
             }
         }
@@ -40,23 +43,15 @@ pipeline {
                 branch 'master'
             }
             steps {
-                echo 'Deploying to EC2 instance via SSH...'
-                withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
-                    sh '''
-                        chmod 600 ${SSH_KEY}
-                        EC2_IP=${EC2_INSTANCE_IP}
-
-                        if [ -z "$EC2_IP" ]; then
-                            echo "Error: EC2_INSTANCE_IP not set"
-                            exit 1
-                        fi
-
-                        ssh -o StrictHostKeyChecking=no \
-                            -o UserKnownHostsFile=/dev/null \
-                            -i ${SSH_KEY} \
-                            ${SSH_USER}@${EC2_IP} \
-                            "bash /opt/DEVOPS-OCC/infra/aws/deploy.sh"
-                    '''
+                sshagent(['ec2-ssh-key']) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ec2-user@$EC2_INSTANCE_IP '
+                        docker pull $IMAGE_NAME:latest
+                        docker stop slot-machine 2>/dev/null || true
+                        docker rm slot-machine 2>/dev/null || true
+                        docker run -d -p 8000:8000 --name slot-machine $IMAGE_NAME:latest
+                    '
+                    """
                 }
             }
         }
