@@ -20,7 +20,7 @@ git pull origin master
 
 # Build and start Docker containers
 echo "Building and starting Docker containers..." | tee -a $LOG_FILE
-docker-compose build --no-cache
+docker-compose pull
 docker-compose down
 docker-compose up -d
 
