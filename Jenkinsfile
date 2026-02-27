@@ -45,7 +45,7 @@ pipeline {
                 }
             }
             steps {
-                sshagent(['ec2-ssh-key']) {
+                sshagent(['ec2-key']) {
                     sh """
                     ssh -o StrictHostKeyChecking=no ec2-user@$EC2_INSTANCE_IP '
                         docker pull $IMAGE_NAME:latest
