@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "keerti144/devops-game"
-        EC2_INSTANCE_IP = "http://43.205.194.151/"
+        EC2_INSTANCE_IP = "43.205.194.151"
     }
 
     stages {
