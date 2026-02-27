@@ -5,8 +5,8 @@ A full-stack, containerized web application developed to demonstrate modern DevO
 **Live Application:**  
 http://43.205.194.151:8000
 
-**DockerHub Repo:**  
-https://hub.docker.com/r/keerti144/devops-game/tags
+**DockerHub Repository:** [keerti144/devops-game](https://hub.docker.com/r/keerti144/devops-game/tags)
+
 ---
 
 ## 📌 Project Overview
