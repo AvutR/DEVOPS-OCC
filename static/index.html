@@ -23,9 +23,19 @@
             box-shadow: 0 0 25px rgba(0, 255, 150, 0.3);
         }
 
-        #reels {
-            font-size: 42px;
-            margin: 20px 0;
+        .hidden {
+            display: none;
+        }
+
+        input {
+            width: 90%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            background: #2a2a2a;
+            color: white;
+            font-size: 16px;
         }
 
         button {
@@ -43,19 +53,53 @@
         }
 
         .reset-btn {
-            background: #444;
+            background: #ff4444;
         }
 
         .reset-btn:hover {
+            background: #cc0000;
+        }
+
+        .logout-btn {
+            background: #444;
+            font-size: 14px;
+            padding: 8px 15px;
+        }
+
+        .logout-btn:hover {
             background: #666;
+        }
+
+        .switch-link {
+            color: #00ff99;
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        #reels {
+            font-size: 65px;
+            letter-spacing: 15px;
+            margin: 30px 0;
+        }
+
+        .spinning {
+            animation: spinMotion 0.15s linear infinite;
+        }
+
+        @keyframes spinMotion {
+            0%   { transform: translateY(0px); }
+            25%  { transform: translateY(-10px); }
+            50%  { transform: translateY(10px); }
+            75%  { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
         }
 
         #balance {
             margin-top: 15px;
             font-size: 18px;
         }
-
-        /* ===== NEW STATS UI ===== */
 
         .stats-container {
             margin-top: 25px;
@@ -97,47 +141,127 @@
             margin-bottom: 6px;
             font-size: 14px;
         }
-        #reels {
-    font-size: 65px;
-    letter-spacing: 15px;
-    margin: 30px 0;
-}
 
-.spinning {
-    animation: spinMotion 0.15s linear infinite;
-}
+        .leaderboard {
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+        }
 
-@keyframes spinMotion {
-    0%   { transform: translateY(0px); }
-    25%  { transform: translateY(-10px); }
-    50%  { transform: translateY(10px); }
-    75%  { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
-}
+        .leaderboard-item {
+            background: #1f1f1f;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .rank {
+            font-weight: bold;
+            color: #00ff99;
+        }
+
+        .user-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+
+        .error-msg {
+            color: #ff4444;
+            margin: 10px 0;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: #2a2a2a;
+        }
+
+        .tab-btn.active {
+            background: #00ff99;
+            color: #000;
+        }
     </style>
 </head>
 <body>
 
-<div class="card">
+<!-- User Info (shown when logged in) -->
+<div id="userInfo" class="user-info hidden">
+    <span id="usernameDisplay"></span>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+</div>
+
+<!-- Login/Register Screen -->
+<div id="authScreen" class="card">
+    <h1>🎰 DevOps Slot Machine</h1>
+    
+    <div id="loginForm">
+        <h2>Login</h2>
+        <input type="text" id="loginUsername" placeholder="Username" />
+        <input type="password" id="loginPassword" placeholder="Password" />
+        <div id="loginError" class="error-msg"></div>
+        <button onclick="login()">Login</button>
+        <div class="switch-link" onclick="showRegister()">Don't have an account? Register</div>
+    </div>
+
+    <div id="registerForm" class="hidden">
+        <h2>Register</h2>
+        <input type="text" id="registerUsername" placeholder="Username (min 3 chars)" />
+        <input type="password" id="registerPassword" placeholder="Password (min 4 chars)" />
+        <div id="registerError" class="error-msg"></div>
+        <button onclick="register()">Register</button>
+        <div class="switch-link" onclick="showLogin()">Already have an account? Login</div>
+    </div>
+</div>
+
+<!-- Game Screen -->
+<div id="gameScreen" class="card hidden">
     <h1>🎰 DevOps Slot Machine</h1>
 
-    <div id="reels">🎲 🎲 🎲</div>
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="showTab('game')">Game</button>
+        <button class="tab-btn" onclick="showTab('leaderboard')">Leaderboard</button>
+    </div>
 
-    <button onclick="spin()">🎯 SPIN</button>
-    <button class="reset-btn" onclick="resetGame()">🔄 RESET</button>
+    <!-- Game Tab -->
+    <div id="gameTab">
+        <div id="reels">🎲 🎲 🎲</div>
 
-    <div id="balance">💰 Balance: $100</div>
-    <div id="message"></div>
+        <button onclick="spin()">🎯 SPIN</button>
+        <button class="reset-btn" onclick="confirmReset()">🔄 RESET</button>
 
-    <div class="stats-container">
-        <div class="stats-grid" id="statsGrid"></div>
+        <div id="balance">💰 Balance: $100</div>
+        <div id="message"></div>
 
-        <h3 style="margin-bottom:8px;">🕒 Last 5 Spins</h3>
-        <div class="history" id="history"></div>
+        <div class="stats-container">
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <h3 style="margin-bottom:8px;">🕒 Last 5 Spins</h3>
+            <div class="history" id="history"></div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Tab -->
+    <div id="leaderboardTab" class="hidden">
+        <h2>🏆 Top Players</h2>
+        <div class="leaderboard" id="leaderboardList"></div>
     </div>
 </div>
 
 <script>
+
+let authToken = localStorage.getItem('authToken');
+let currentUsername = localStorage.getItem('username');
 
 const symbolMap = {
     "@": "🍒",
@@ -150,26 +274,138 @@ const symbolMap = {
     "LEMON": "🍋"
 };
 
-function animateReels() {
-    const reels = document.getElementById("reels");
-    reels.classList.add("spinning");
+// Initialize
+if (authToken) {
+    showGameScreen();
+} else {
+    showAuthScreen();
+}
 
-    let symbols = Object.values(symbolMap);
+function showAuthScreen() {
+    document.getElementById('authScreen').classList.remove('hidden');
+    document.getElementById('gameScreen').classList.add('hidden');
+    document.getElementById('userInfo').classList.add('hidden');
+}
 
-    let interval = setInterval(() => {
-        reels.innerHTML =
-            `${symbols[Math.floor(Math.random()*symbols.length)]}
-             ${symbols[Math.floor(Math.random()*symbols.length)]}
-             ${symbols[Math.floor(Math.random()*symbols.length)]}`;
-    }, 100);
+function showGameScreen() {
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('gameScreen').classList.remove('hidden');
+    document.getElementById('userInfo').classList.remove('hidden');
+    document.getElementById('usernameDisplay').textContent = `👤 ${currentUsername}`;
+    loadStats();
+    showTab('game');
+}
 
-    return interval;
+function showLogin() {
+    document.getElementById('loginForm').classList.remove('hidden');
+    document.getElementById('registerForm').classList.add('hidden');
+}
+
+function showRegister() {
+    document.getElementById('loginForm').classList.add('hidden');
+    document.getElementById('registerForm').classList.remove('hidden');
+}
+
+function showTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    if (tab === 'game') {
+        document.getElementById('gameTab').classList.remove('hidden');
+        document.getElementById('leaderboardTab').classList.add('hidden');
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+    } else {
+        document.getElementById('gameTab').classList.add('hidden');
+        document.getElementById('leaderboardTab').classList.remove('hidden');
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+        loadLeaderboard();
+    }
+}
+
+async function register() {
+    const username = document.getElementById('registerUsername').value;
+    const password = document.getElementById('registerPassword').value;
+    const errorDiv = document.getElementById('registerError');
+    
+    errorDiv.textContent = '';
+    
+    try {
+        const response = await fetch('/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            errorDiv.textContent = data.detail;
+            return;
+        }
+        
+        authToken = data.token;
+        currentUsername = data.username;
+        localStorage.setItem('authToken', authToken);
+        localStorage.setItem('username', currentUsername);
+        
+        document.getElementById('balance').textContent = `💰 Balance: $${data.balance}`;
+        showGameScreen();
+    } catch (error) {
+        errorDiv.textContent = 'Registration failed. Please try again.';
+    }
+}
+
+async function login() {
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+    const errorDiv = document.getElementById('loginError');
+    
+    errorDiv.textContent = '';
+    
+    try {
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            errorDiv.textContent = data.detail;
+            return;
+        }
+        
+        authToken = data.token;
+        currentUsername = data.username;
+        localStorage.setItem('authToken', authToken);
+        localStorage.setItem('username', currentUsername);
+        
+        document.getElementById('balance').textContent = `💰 Balance: $${data.balance}`;
+        showGameScreen();
+    } catch (error) {
+        errorDiv.textContent = 'Login failed. Please try again.';
+    }
+}
+
+async function logout() {
+    try {
+        await fetch('/logout', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+    
+    authToken = null;
+    currentUsername = null;
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('username');
+    showAuthScreen();
 }
 
 async function spin() {
-
     const reels = document.getElementById("reels");
-
     reels.classList.add("spinning");
 
     let symbols = Object.values(symbolMap);
@@ -181,77 +417,119 @@ async function spin() {
              ${symbols[Math.floor(Math.random()*symbols.length)]}`;
     }, 100);
 
-    const response = await fetch('/spin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bet_amount: 5 })
-    });
+    try {
+        const response = await fetch('/spin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({ bet_amount: 5 })
+        });
 
-    const data = await response.json();
+        const data = await response.json();
 
-    // Force minimum spin duration
-    await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-    clearInterval(interval);
-    reels.classList.remove("spinning");
+        clearInterval(interval);
+        reels.classList.remove("spinning");
 
-    if (!response.ok) {
+        if (!response.ok) {
+            document.getElementById('message').innerHTML = `⚠ ${data.detail}`;
+            return;
+        }
+
+        reels.innerHTML =
+            `${symbolMap[data.reel1]} 
+             ${symbolMap[data.reel2]} 
+             ${symbolMap[data.reel3]}`;
+
+        document.getElementById('balance').innerHTML = `💰 Balance: $${data.new_balance}`;
+
         document.getElementById('message').innerHTML =
-            `⚠ ${data.detail}`;
-        return;
+            data.winnings > 0
+                ? `🎉 JACKPOT! You won $${data.winnings}!`
+                : `😅 No win.`;
+
+        loadStats();
+    } catch (error) {
+        clearInterval(interval);
+        reels.classList.remove("spinning");
+        document.getElementById('message').innerHTML = '⚠ Error spinning. Please try again.';
     }
-
-    reels.innerHTML =
-        `${symbolMap[data.reel1]} 
-         ${symbolMap[data.reel2]} 
-         ${symbolMap[data.reel3]}`;
-
-    document.getElementById('balance').innerHTML =
-        `💰 Balance: $${data.new_balance}`;
-
-    document.getElementById('message').innerHTML =
-        data.winnings > 0
-            ? `🎉 JACKPOT! You won $${data.winnings}!`
-            : `😅 No win.`;
-
-    loadStats();
 }
 
-
 async function loadStats() {
-    const response = await fetch('/stats');
-    const data = await response.json();
+    try {
+        const response = await fetch('/stats', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await response.json();
 
-    document.getElementById('statsGrid').innerHTML = `
-        <div class="stat-box">📊 Spins<div class="stat-value">${data.total_spins}</div></div>
-        <div class="stat-box">🏆 Wins<div class="stat-value">${data.total_wins}</div></div>
-        <div class="stat-box">💎 Total Won<div class="stat-value">$${data.total_amount_won}</div></div>
-        <div class="stat-box">📈 Win Rate<div class="stat-value">${data.win_rate}%</div></div>
-        <div class="stat-box">🔥 Highest Win<div class="stat-value">$${data.highest_win}</div></div>
-        <div class="stat-box">🚀 Win Streak<div class="stat-value">${data.max_win_streak}</div></div>
-    `;
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-box">📊 Spins<div class="stat-value">${data.total_spins}</div></div>
+            <div class="stat-box">🏆 Wins<div class="stat-value">${data.total_wins}</div></div>
+            <div class="stat-box">💎 Total Won<div class="stat-value">$${data.total_amount_won}</div></div>
+            <div class="stat-box">📈 Win Rate<div class="stat-value">${data.win_rate}%</div></div>
+            <div class="stat-box">🔥 Highest Win<div class="stat-value">$${data.highest_win}</div></div>
+            <div class="stat-box">🚀 Win Streak<div class="stat-value">${data.max_win_streak}</div></div>
+        `;
 
-    let historyHTML = data.last_5_spins.map(spin =>
-        `<div class="history-item">
-            🎲 ${spin.reels.map(r => symbolMap[r]).join(" | ")}
-            → 💰 $${spin.winnings}
-        </div>`
-    ).join("");
+        let historyHTML = data.last_5_spins.map(spin =>
+            `<div class="history-item">
+                🎲 ${spin.reels.map(r => symbolMap[r]).join(" | ")}
+                → 💰 $${spin.winnings}
+            </div>`
+        ).join("");
 
-    document.getElementById('history').innerHTML = historyHTML;
+        document.getElementById('history').innerHTML = historyHTML || '<div class="history-item">No spins yet</div>';
+    } catch (error) {
+        console.error('Error loading stats:', error);
+    }
+}
+
+async function loadLeaderboard() {
+    try {
+        const response = await fetch('/leaderboard');
+        const data = await response.json();
+
+        let leaderboardHTML = data.leaderboard.map(entry =>
+            `<div class="leaderboard-item">
+                <span class="rank">#${entry.rank} ${entry.username}</span>
+                <span>💰 $${entry.balance}</span>
+            </div>`
+        ).join("");
+
+        document.getElementById('leaderboardList').innerHTML = leaderboardHTML || '<p>No players yet</p>';
+    } catch (error) {
+        document.getElementById('leaderboardList').innerHTML = '<p>Error loading leaderboard</p>';
+    }
+}
+
+function confirmReset() {
+    if (confirm('⚠️ Are you sure you want to RESET? This will set your balance to $100 and clear all your game history!')) {
+        resetGame();
+    }
 }
 
 async function resetGame() {
-    await fetch('/reset', { method: 'POST' });
+    try {
+        const response = await fetch('/reset', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
 
-    document.getElementById('reels').innerHTML = "🎲 🎲 🎲";
-    document.getElementById('balance').innerHTML = "💰 Balance: $100";
-    document.getElementById('message').innerHTML = "";
+        const data = await response.json();
 
-    loadStats();
+        document.getElementById('reels').innerHTML = "🎲 🎲 🎲";
+        document.getElementById('balance').innerHTML = `💰 Balance: $${data.balance}`;
+        document.getElementById('message').innerHTML = "✅ Game reset!";
+
+        loadStats();
+    } catch (error) {
+        document.getElementById('message').innerHTML = '⚠ Error resetting game.';
+    }
 }
-
-loadStats();
 
 </script>
 
