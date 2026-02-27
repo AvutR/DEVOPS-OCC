@@ -1,4 +1,5 @@
 services:
+
   backend:
     build: .
     image: keerti144/devops-game:latest
@@ -6,3 +7,26 @@ services:
     ports:
       - "8000:8000"
     restart: always
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo:6
+    container_name: slot-machine-db
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app-network
+
+volumes:
+  mongo_data:
+
+networks:
+  app-network:

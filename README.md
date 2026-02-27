@@ -102,7 +102,7 @@ New container is started on port 8000
 
 Access:
 
-http://<ec2-public-ip>:8000
+http://43.205.194.151/:8000
 Game Rules
 
 Starting balance: $100
@@ -124,3 +124,4 @@ $ $ $ → $200
 License
 
 MIT License
+

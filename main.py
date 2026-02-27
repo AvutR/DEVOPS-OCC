@@ -1,43 +1,22 @@
 #!/usr/bin/env python3
-"""
-SLOT MACHINE API - FastAPI Backend
-Provides REST endpoints for slot machine operations
-"""
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from slot_engine import SlotEngine
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from database import stats_collection
+from datetime import datetime
 
-app = FastAPI(title="Vegas Slot Machine API", version="1.0.0")
+app = FastAPI(title="Vegas Slot Machine API", version="2.0.0")
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Global engine instance
 engine = SlotEngine(starting_balance=100)
 
 
-# Request/Response Models
 class SpinRequest(BaseModel):
     bet_amount: int = 5
-
-
-class SpinResponse(BaseModel):
-    reel1: str
-    reel2: str
-    reel3: str
-    bet_amount: int
-    winnings: int
-    new_balance: int
-    total_won: int
-    is_winner: bool
-
-
-class GameStateResponse(BaseModel):
-    balance: int
-    starting_balance: int
-    last_spin: tuple | None
-    last_winnings: int
 
 
 @app.get("/")
@@ -45,21 +24,15 @@ def serve_frontend():
     return FileResponse("static/index.html")
 
 
-@app.get("/state")
-def get_state() -> GameStateResponse:
-    """Get current game state"""
-    state = engine.get_state()
-    return GameStateResponse(
-        balance=state['balance'],
-        starting_balance=state['starting_balance'],
-        last_spin=state['last_spin'],
-        last_winnings=state['last_winnings'],
-    )
-
+# ------------------ SPIN ------------------
 
 @app.post("/spin")
 def spin(request: SpinRequest):
+
     bet_amount = request.bet_amount
+
+    if engine.balance <= 0:
+        raise HTTPException(status_code=400, detail="Game Over - Reset Required")
 
     if not engine.place_bet(bet_amount):
         raise HTTPException(status_code=400, detail="Insufficient balance")
@@ -70,6 +43,17 @@ def spin(request: SpinRequest):
     if winnings > 0:
         engine.add_winnings(winnings)
 
+    spin_doc = {
+        "timestamp": datetime.utcnow(),
+        "reels": [reel1, reel2, reel3],
+        "bet": bet_amount,
+        "winnings": winnings,
+        "balance_after": engine.balance,
+        "is_winner": winnings > 0
+    }
+
+    stats_collection.insert_one(spin_doc)
+
     return {
         "reel1": reel1,
         "reel2": reel2,
@@ -77,23 +61,72 @@ def spin(request: SpinRequest):
         "bet_amount": bet_amount,
         "winnings": winnings,
         "new_balance": engine.balance,
-        "total_won": engine.last_winnings,
         "is_winner": winnings > 0,
     }
 
 
+# ------------------ RESET ------------------
+
 @app.post("/reset")
-def reset_game() -> GameStateResponse:
-    """Reset the game to initial state"""
+def reset_game():
     global engine
     engine = SlotEngine(starting_balance=100)
-    state = engine.get_state()
-    return GameStateResponse(
-        balance=state['balance'],
-        starting_balance=state['starting_balance'],
-        last_spin=state['last_spin'],
-        last_winnings=state['last_winnings'],
+
+    # Clear DB stats for fresh game
+    stats_collection.delete_many({})
+
+    return {"message": "Game fully reset"}
+
+
+# ------------------ STATS ------------------
+
+@app.get("/stats")
+def get_stats():
+
+    total_spins = stats_collection.count_documents({})
+    total_wins = stats_collection.count_documents({"is_winner": True})
+
+    total_amount_won = 0
+    highest_win = 0
+    current_streak = 0
+    max_streak = 0
+
+    for doc in stats_collection.find().sort("timestamp", 1):
+        total_amount_won += doc["winnings"]
+
+        if doc["winnings"] > highest_win:
+            highest_win = doc["winnings"]
+
+        if doc["is_winner"]:
+            current_streak += 1
+            if current_streak > max_streak:
+                max_streak = current_streak
+        else:
+            current_streak = 0
+
+    win_rate = (total_wins / total_spins * 100) if total_spins > 0 else 0
+
+    last_5_spins = list(
+        stats_collection.find().sort("timestamp", -1).limit(5)
     )
+
+    formatted_last_5 = [
+        {
+            "reels": doc["reels"],
+            "winnings": doc["winnings"]
+        }
+        for doc in last_5_spins
+    ]
+
+    return {
+        "total_spins": total_spins,
+        "total_wins": total_wins,
+        "total_amount_won": total_amount_won,
+        "win_rate": round(win_rate, 2),
+        "highest_win": highest_win,
+        "max_win_streak": max_streak,
+        "last_5_spins": formatted_last_5
+    }
 
 
 if __name__ == "__main__":
