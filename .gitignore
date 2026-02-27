@@ -1,0 +1,28 @@
+# Python-related files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+.env
+
+# Docker-related files
+*.log
+docker-compose.override.yml
+
+# IDE-specific files
+.vscode/
+*.code-workspace
+
+# System files
+.DS_Store
+Thumbs.db
+
+# MongoDB data
+mongo_data/
+
+# Ignore compiled files
+*.pyc
+*.pyo
+*.pyd
